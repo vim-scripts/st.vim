@@ -1,0 +1,4 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=1834
+
+st.vim is a syntax highlighting script for Smalltalk that I wrote because I wasn't quite happy with the one that was distributed with my copy of Vim.  It's somewhat GNU Smalltalk-oriented, but I'm open to suggestions on improving compatibility with other versions of Smalltalk, as well as suggestions and corrections in general.  Also, I have only tested it in Vim 7.0.  If it works (or can be made to work) in earlier versions, please let me know.
+
