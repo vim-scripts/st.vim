@@ -95,7 +95,7 @@ syn region stString
 
 syn match stCharacter /$./
 
-" stLiterals holds all, uh. literals.
+" stLiterals holds all, uh, literals.
 syn cluster stLiterals contains=stString,stCharacter
 syn cluster stMethodMembers add=stString,stCharacter
 
@@ -126,12 +126,12 @@ syn match stArrayConst /\%(#\[\|#\@<!#(\)/me=e-1 nextgroup=stArray,stByteArray
 syn region stArray
     \ matchgroup=stArrayDelims
     \ start=/(/ end=/)/
-    \ contains=@stLiterals,stArray,stByteArray,stNil,stBoolean,stError
+    \ contains=@stLiterals,stComment,stArray,stByteArray,stNil,stBoolean,stError
     \ contained transparent fold
 syn region stByteArray
     \ matchgroup=stByteArrayDelims
     \ start=/\[/ end=/\]/
-    \ contains=stNumber,stError
+    \ contains=stNumber,stComment,stError
     \ contained transparent fold
 
 syn cluster stLiterals add=stArrayConst
