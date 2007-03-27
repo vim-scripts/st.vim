@@ -8,6 +8,11 @@ if exists("b:current_syntax")
     finish
 endif
 
+let s:cpo_save = &cpo
+set cpo&vim
+
+" -----------------------------------------------------------------------------
+
 " Letters and digits only.
 setlocal iskeyword=a-z,A-Z,48-57
 
@@ -33,7 +38,7 @@ syn cluster stMethodMembers contains=stDelimError
 syn keyword stTodo FIXME TODO XXX contained
 syn region stComment
     \ start=/"/ end=/"/
-    \ contains=stTodo
+    \ contains=stTodo,@Spell
     \ fold
 
 syn cluster stMethodMembers add=stComment
@@ -68,7 +73,7 @@ syn region stMethod
 " Binary messages
 syn region stMethod
     \ matchgroup=stMessagePattern
-    \ start=/[-+*/~|,<>=&@?\\%]\{1,2}\s\+\K\k*/
+    \ start=/[-+*/~|,<>=&@?\\%]\{1,2}\s\+\K\k*\%(\_s\+\)\@=/
     \ end=/!/
     \ contains=@stMethodMembers
     \ contained transparent fold
@@ -76,7 +81,7 @@ syn region stMethod
 " Keyword messages
 syn region stMethod
     \ matchgroup=stMessagePattern
-    \ start=/\%(\K\k*:\s\+\K\k*\_s\+\)*\K\k*:\s\+\K\k*/
+    \ start=/\%(\K\k*:\s\+\K\k*\_s\+\)*\K\k*:\s\+\K\k*\%(\_s\+\)\@=/
     \ end=/!/
     \ contains=@stMethodMembers
     \ contained transparent fold
@@ -91,7 +96,7 @@ syn match stSpecialChar /''/ contained
 syn region stString
     \ matchgroup=stString
     \ start=/'/ skip=/''/ end=/'/
-    \ contains=stSpecialChar,stFormatSpec
+    \ contains=stSpecialChar,stFormatSpec,@Spell
 
 syn match stCharacter /$./
 
@@ -101,15 +106,20 @@ syn cluster stMethodMembers add=stString,stCharacter
 
 " -----------------------------------------------------------------------------
 
-syn region stSymbol
-    \ matchgroup=stSymbol
+syn region stHashedString
+    \ matchgroup=stHashedString
     \ start=/#'/ skip=/''/ end=/'/
     \ contains=stSpecialChar
-syn match stSymbol /#\%(\K\k*\|:\)\+/
-syn match stSymbol /#[-+*/~|,<>=&@?\\%]\{1,2}/
 
-syn cluster stLiterals add=stSymbol
-syn cluster stMethodMembers add=stSymbol
+syn match stQuotedSelector /#\K\k*/ display
+" Standard draft says [!%&*+,/<=>?@\\~|-].
+syn match stQuotedSelector /#[-+*/~|,<>=&@?\\%]\+/ display
+syn match stQuotedSelector /#\%(\K\k*:\)\+/ display
+
+syn cluster stSymbol contains=stHashedString,stQuotedSelector
+
+syn cluster stLiterals add=@stSymbol
+syn cluster stMethodMembers add=@stSymbol
 
 " -----------------------------------------------------------------------------
 
@@ -126,12 +136,12 @@ syn match stArrayConst /\%(#\[\|#\@<!#(\)/me=e-1 nextgroup=stArray,stByteArray
 syn region stArray
     \ matchgroup=stArrayDelims
     \ start=/(/ end=/)/
-    \ contains=@stLiterals,stComment,stArray,stByteArray,stNil,stBoolean,stError
+    \ contains=@stLiterals,stComment,stArray,stByteArray,stNil,stBoolean
     \ contained transparent fold
 syn region stByteArray
     \ matchgroup=stByteArrayDelims
     \ start=/\[/ end=/\]/
-    \ contains=stNumber,stComment,stError
+    \ contains=@stNumber,stComment
     \ contained transparent fold
 
 syn cluster stLiterals add=stArrayConst
@@ -153,31 +163,22 @@ syn cluster stMethodMembers add=stBinding,stEval
 
 " -----------------------------------------------------------------------------
 
-" These two patterns are built based on the assumption that if there's
-" no radix, there are no letters in the number.  Otherwise it quickly
-" turns into a nightmare with no way to tell the difference between a
-" word in all-caps and a number.  Perhaps there's a better way.
-syn match stNumber
-    \ /-\?\<\d\+\%(\.\d\+\)\?\%([deqs]\%(-\?\d\+\)\?\)\?\>/
-    \ display
-syn match stNumber
-    \ /\<\d\+r-\?[0-9A-Z]\+\%(\.[0-9A-Z]\+\)\?\%([deqs]\%(-\?\d\+\)\?\)\?\>/
-    \ display
+syn match stInteger display       /\<\d\+\>/
+syn match stRadixInteger display  /\<\d\+r[0-9A-Z]\+\>/
+syn match stFloat display         /\<\d\+\.\d\+\%([edq]-\?\d\+\)\?\>/
+syn match stScaledDecimal display /\<\d\+\%(\.\d\+\)\?s\%(\d\+\)\?\>/
 
-syn cluster stLiterals add=stNumber
-syn cluster stMethodMembers add=stNumber
+" syn match stNumber
+"     \ /-\?\<\d\+\%(\.\d\+\)\?\%([deqs]\%(-\?\d\+\)\?\)\?\>/
+"     \ display
+" syn match stNumber
+"     \ /\<\d\+r-\?[0-9A-Z]\+\%(\.[0-9A-Z]\+\)\?\%([deqs]\%(-\?\d\+\)\?\)\?\>/
+"     \ display
 
-" -----------------------------------------------------------------------------
+syn cluster stNumber contains=st\%(Radix\)\?Integer,stFloat,stScaledDecimal
 
-" You should FIXME because I, as a region, start at any less-than sign.
-"
-" syn region stPragma
-"     \ matchgroup=stPragma
-"     \ start=/</ end=/>/
-"     \ contains=stString,stArrayConst,stSymbol
-"     \ contained
-" 
-" syn cluster stMethodMembers add=stPragma
+syn cluster stLiterals add=@stNumber
+syn cluster stMethodMembers add=@stNumber
 
 " -----------------------------------------------------------------------------
 
@@ -248,6 +249,14 @@ syn cluster stMethodMembers add=stConditional
 
 " -----------------------------------------------------------------------------
 
+hi def link stInteger          Number
+hi def link stRadixInteger     Number
+hi def link stFloat            Float
+hi def link stScaledDecimal    Float
+
+hi def link stHashedString     Constant
+hi def link stQuotedSelector   Constant
+
 hi def link stAnswer           Statement
 hi def link stArrayConst       Constant
 hi def link stArrayDelims      Delimiter
@@ -273,13 +282,14 @@ hi def link stKeyword          Keyword
 hi def link stMessagePattern   Function
 hi def link stMethodDelims     Statement
 hi def link stNil              Keyword
-hi def link stNumber           Number
 hi def link stSpecialChar      SpecialChar
 hi def link stString           String
-hi def link stSymbol           Constant
 hi def link stTempDelims       Delimiter
 hi def link stTodo             Todo
 
 " -----------------------------------------------------------------------------
 
 let b:current_syntax = "st"
+
+let &cpo = s:cpo_save
+unlet s:cpo_save
