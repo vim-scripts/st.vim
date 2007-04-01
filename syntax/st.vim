@@ -268,10 +268,14 @@ syn match stIdentifier /\K\k*/ contained display
 " -----------------------------------------------------------------------------
 
 " To FIXME or not to FIXME?  I will match at "boolean | boolean | boolean".
-syn region stTemps
-    \ matchgroup=stTempDelims
-    \ start=/|/ end=/|/
-    \ contains=stIdentifier,stError
+" syn region stTemps
+"     \ matchgroup=stTempDelims
+"     \ start=/|/ end=/|/
+"     \ contains=stIdentifier,stError
+
+syn match stTemps
+    \ /|\s*\%(\K\k*\_s\+\)*\K\k*\s*|/
+    \ contains=stIdentifier,stDelimiter
 
 syn cluster stMethodMembers add=stTemps
 
